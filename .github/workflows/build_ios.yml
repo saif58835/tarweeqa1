@@ -1,0 +1,42 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Clean previous builds
+        run: flutter clean
+
+      - name: Create new ios folder
+        run: flutter create --no-overwrite --platforms=ios .
+
+      - name: Set correct Bundle ID
+        run: |
+          sed -i '' 's/com\.example\.tarweeqa[a-zA-Z]*/com.example.tarweeqa/g' ios/Runner.xcodeproj/project.pbxproj
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (unsigned)
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-ipa
+          path: build/ios/iphoneos/Runner.app
